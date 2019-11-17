@@ -211,7 +211,7 @@ export class RedisClusterOptions implements RedisOptions {
     }
 
     public createClient(): IoRedis.Redis {
-        return new IoRedis.Cluster(this.options.nodes, this.options);
+        return new IoRedis.Cluster(this.options.nodes, this.options) as any;
     }
 
     public createUri(): string {

@@ -170,7 +170,7 @@ export class RedisBackend implements ResultBackend {
         return this.pool.use(async (client): Promise<string> => {
             this.results.delete(taskId);
 
-            return client.del(taskId);
+            return client.del(taskId).toString();
         });
     }
 

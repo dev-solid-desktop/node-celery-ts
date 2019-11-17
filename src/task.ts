@@ -65,6 +65,7 @@ export class Task<T> {
     private readonly failoverStrategy: FailoverStrategy;
     private readonly name: string;
     private readonly queue: string = "celery";
+    private readonly taskId: string = Uuid.v4();
     private readonly timeLimit: [number | null, number | null] = [null, null];
 
     /**
@@ -95,6 +96,7 @@ export class Task<T> {
         name,
         queue = "celery",
         softTimeLimit,
+        taskId,
     }: TaskOptions) {
         this.appId = appId;
         this.backend = backend;
@@ -108,6 +110,7 @@ export class Task<T> {
             hard: hardTimeLimit,
             soft: softTimeLimit,
         });
+        this.taskId = taskId ?? Uuid.v4();
     }
 
     /**
@@ -147,8 +150,7 @@ export class Task<T> {
             return this.backend;
         })();
 
-        const id = Uuid.v4();
-        const result = new Result<T>(id, backend);
+        const result = new Result<T>(this.taskId, backend);
 
         const [packer, encoding] = Task.createPacker(serializer, compression);
         const body = Task.packBody({ args, kwargs, packer });
@@ -165,13 +167,13 @@ export class Task<T> {
                 compression,
                 eta: etaStr,
                 expires: expiresStr,
-                id,
+                id: this.taskId,
                 kwargs,
             }),
             properties: this.createProperties({
                 deliveryMode: this.getDeliveryMode(),
                 encoding,
-                id,
+                id: this.taskId,
                 priority,
                 queue,
             }),
@@ -442,6 +444,7 @@ export interface TaskOptions {
     name: string;
     queue?: string;
     softTimeLimit?: number;
+    taskId?: string;
 }
 
 /**

@@ -176,7 +176,7 @@ export const createTimeoutPromise = async <T>(
         return promise;
     }
 
-    return Promise.race([promise, createTimerPromise(timeout)]);
+    return Promise.race([promise, createTimerPromise(timeout) as any]);
 };
 
 /**
