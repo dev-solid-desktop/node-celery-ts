@@ -65,7 +65,6 @@ export class Task<T> {
     private readonly failoverStrategy: FailoverStrategy;
     private readonly name: string;
     private readonly queue: string = "celery";
-    private readonly taskId: string = Uuid.v4();
     private readonly timeLimit: [number | null, number | null] = [null, null];
 
     /**
@@ -96,7 +95,6 @@ export class Task<T> {
         name,
         queue = "celery",
         softTimeLimit,
-        taskId,
     }: TaskOptions) {
         this.appId = appId;
         this.backend = backend;
@@ -110,7 +108,6 @@ export class Task<T> {
             hard: hardTimeLimit,
             soft: softTimeLimit,
         });
-        this.taskId = taskId ?? Uuid.v4();
     }
 
     /**
@@ -132,6 +129,7 @@ export class Task<T> {
      *          created with a `NullBackend`, `Result#get` cannot be invoked.
      */
     public applyAsync({
+        taskId,
         args,
         compression = Packer.Compressor.Identity,
         eta,
@@ -150,7 +148,9 @@ export class Task<T> {
             return this.backend;
         })();
 
-        const result = new Result<T>(this.taskId, backend);
+        const _taskId = taskId ?? Uuid.v4();
+
+        const result = new Result<T>(_taskId, backend);
 
         const [packer, encoding] = Task.createPacker(serializer, compression);
         const body = Task.packBody({ args, kwargs, packer });
@@ -167,13 +167,13 @@ export class Task<T> {
                 compression,
                 eta: etaStr,
                 expires: expiresStr,
-                id: this.taskId,
+                id: _taskId,
                 kwargs,
             }),
             properties: this.createProperties({
                 deliveryMode: this.getDeliveryMode(),
                 encoding,
-                id: this.taskId,
+                id: _taskId,
                 priority,
                 queue,
             }),
@@ -460,6 +460,7 @@ export interface TaskApplyOptions {
     priority?: Priority;
     queue?: string;
     serializer?: Packer.Serializer;
+    taskId?: string;
 }
 
 export type Args = Array<any>;
